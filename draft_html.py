@@ -1,40 +1,22 @@
-from mtgsdk import Card
-import requests
+import human_curl as requests
+import json
 
-MAGIC_GET_BASE = "https://api.magicthegathering.io/v1/cards"
-
-HTML_HEADER = '<!doctype html> <html lang="en"> <head> <meta charset="utf-8"> <title>Card F**K City</title> <meta name="description" content="Card F**K City"></head> <body>'
-
-HTML_FOOTER = '</body> </html>'
+MURL = "https://api.deckbrew.com/mtg/cards?name={}"
 
 def main():
+
     with open("/home/tanger/dev/cubedraft/README.md", 'w') as outcubepage, open("/home/tanger/dev/cubedraft/failed_Cards.txt", 'w') as failed:
-        outcubepage.write(HTML_HEADER)
         with open("unixdraft", 'r') as incubepage:
             for line in incubepage:
-                params = {"name": line}
-                response = requests.get(
-                        MAGIC_GET_BASE,
-                        params=params
-                        )
-                status = response.status_code
-                if status == 200:
-                    print("Writing %s" % line)
-                    outcubepage.write('<a href="%s">%s</a><br />' % (response.url, line))
-                else:
-                    params = {"names": line}
-                    response = requests.get(
-                            MAGIC_GET_BASE,
-                            params=params
-                            )
-                    status = response.status_code
-                    if status == 200:
-                        print("Writing %s" % line)
-                        outcubepage.write('<a href="%s">%s</a><br />' % (response.url, line))
-                    else:
-                        print("Failed %s" % line)
-                        failed.write(line)
-        outcubepage.write(HTML_FOOTER)
+                card = line.replace(',','').replace('\n','').replace('\r','')
+                print card
+                r = requests.get(MURL.format(card))
+                results = json.loads(r.content)
+                try:
+                    url = results[0]['editions'][0]['url']
+                    outcubepage.write("<a href='%s'>%s</a><br />" % (url, line))
+                except IndexError:
+                    continue
 
 if __name__ == '__main__':
     main()
